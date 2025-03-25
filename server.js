@@ -5,11 +5,14 @@ const fs = require('fs');
 const path = require('path');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 const port = 8000;
+const secretKey = 'your_secret_key'; // Use a secure key in production
 
 // Store online users and their socket IDs
 const onlineUsers = new Map(); // userId -> {socketId, username}
@@ -79,6 +82,37 @@ if (!fs.existsSync(usersDb)) {
     fs.writeFileSync(usersDb, '[]', 'utf8');
 }
 
+// User registration
+app.post('/signup', async (req, res) => {
+    const { username, password } = req.body;
+    const users = JSON.parse(fs.readFileSync(usersDb, 'utf8'));
+    
+    if (users.some(user => user.username === username)) {
+        return res.status(400).json({ error: 'Username already exists' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const newUser = { id: uuidv4(), username, password_hash: passwordHash };
+    users.push(newUser);
+    fs.writeFileSync(usersDb, JSON.stringify(users, null, 2));
+
+    res.status(201).json({ message: 'User registered successfully' });
+});
+
+// User login
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const users = JSON.parse(fs.readFileSync(usersDb, 'utf8'));
+
+    const user = users.find(user => user.username === username);
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+        return res.status(400).json({ error: 'Invalid username or password' });
+    }
+
+    const token = jwt.sign({ userId: user.id, username: user.username }, secretKey, { expiresIn: '1h' });
+    res.json({ token });
+});
+
 // WebSocket connection handling
 io.on('connection', (socket) => {
     let userId = null;
@@ -143,6 +177,18 @@ io.on('connection', (socket) => {
         const toUser = onlineUsers.get(toUserId);
 
         if (toUser && userFriends.get(userId)?.has(toUserId)) {
+            const newMessage = {
+                id: uuidv4(),
+                from_user_id: userId,
+                to_user_id: toUserId,
+                message,
+                timestamp: new Date().toISOString()
+            };
+
+            const messages = JSON.parse(fs.readFileSync(messagesDb, 'utf8'));
+            messages.push(newMessage);
+            fs.writeFileSync(messagesDb, JSON.stringify(messages, null, 2));
+
             io.to(toUser.socketId).emit('newMessage', {
                 fromUserId: userId,
                 fromUsername: fromUser.username,
