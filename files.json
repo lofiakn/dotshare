@@ -1,0 +1,50 @@
+[
+  {
+    "token": "d9689659-9e60-4e5d-b58e-10cbb3ccac7e",
+    "originalName": "Novo Documento de Texto.txt",
+    "filename": "b644e966-2399-4242-a10f-e242c062e3d2.txt",
+    "size": 266753,
+    "uploadDate": "2025-03-25T12:51:30.535Z",
+    "path": "uploads/b644e966-2399-4242-a10f-e242c062e3d2.txt"
+  },
+  {
+    "token": "f55d2f2b-0da2-47bc-a3ed-51892cbd6611",
+    "originalName": "Novo Documento de Texto (2).txt",
+    "filename": "d3e6c77a-fd42-4613-ac6c-e618e55fef40.txt",
+    "size": 11,
+    "uploadDate": "2025-03-25T12:52:20.020Z",
+    "path": "uploads/d3e6c77a-fd42-4613-ac6c-e618e55fef40.txt"
+  },
+  {
+    "token": "13c89b4c-03a9-41ba-a155-35b40d250447",
+    "originalName": "Novo Documento de Texto (2).txt",
+    "filename": "ded9b130-1da6-43e9-95a5-5bf1fd923a84.txt",
+    "size": 11,
+    "uploadDate": "2025-03-25T12:57:17.495Z",
+    "path": "uploads/ded9b130-1da6-43e9-95a5-5bf1fd923a84.txt",
+    "uploaderIP": "200.241.34.18",
+    "downloadCount": 4
+  },
+  {
+    "token": "2387bfe0-0bad-4e2c-b1ed-2009f05d7c80",
+    "originalName": "Screenshot_1.png",
+    "filename": "7a045efa-591b-499f-bda8-ea966bcb26ba.png",
+    "size": 890122,
+    "uploadDate": "2025-03-25T13:10:27.996Z",
+    "path": "uploads/7a045efa-591b-499f-bda8-ea966bcb26ba.png",
+    "uploaderIP": "201.25.114.68",
+    "uploaderId": "afdfc533-4fc4-4dd0-8399-7b6128ce4b60",
+    "downloadCount": 5
+  },
+  {
+    "token": "a1e65ed5-4323-4612-a9fa-637ec1588c23",
+    "originalName": "PE1362425-OS235348468.pdf",
+    "filename": "353813bc-5df9-42b3-8f52-46dc8eaf2bf9.pdf",
+    "size": 169364,
+    "uploadDate": "2025-03-25T13:47:32.233Z",
+    "path": "uploads/353813bc-5df9-42b3-8f52-46dc8eaf2bf9.pdf",
+    "uploaderIP": "201.25.114.68",
+    "uploaderId": "845a6442-4725-4bde-a53e-83cc1f9cc255",
+    "downloadCount": 8
+  }
+]
