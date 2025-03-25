@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Statistics - FileShare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen font-['Inter']">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-cloud-upload-alt text-blue-600 text-2xl mr-2"></i>
+                    <a href="/" class="text-xl font-bold text-gray-900">FileShare</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">File Statistics</h1>
+                <p class="text-gray-600">View detailed information about file access and downloads</p>
+            </div>
+
+            <div id="stats-content" class="space-y-6">
+                <!-- File Information -->
+                <div class="border-b border-gray-200 pb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">File Information</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600">File Name</p>
+                            <p id="file-name" class="font-medium text-gray-900">Loading...</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Upload Date</p>
+                            <p id="upload-date" class="font-medium text-gray-900">Loading...</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">File Size</p>
+                            <p id="file-size" class="font-medium text-gray-900">Loading...</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Download Count</p>
+                            <p id="download-count" class="font-medium text-gray-900">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Access Log -->
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Access Log</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="access-log" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="3" class="px-6 py-4 text-center text-gray-500">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="error-message" class="hidden mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="flex">
+                    <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3"></i>
+                    <div>
+                        <h3 class="text-red-800 font-medium">Error</h3>
+                        <p class="text-red-700 text-sm mt-1" id="error-text"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Get file token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileToken = urlParams.get('token');
+
+        if (!fileToken) {
+            showError('No file token provided');
+        } else {
+            fetchFileStats();
+        }
+
+        function fetchFileStats() {
+            fetch(`/api/stats/${fileToken}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('File not found');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateStats(data);
+                })
+                .catch(error => {
+                    showError(error.message);
+                });
+        }
+
+        function updateStats(data) {
+            // Update file information
+            document.getElementById('file-name').textContent = data.originalName;
+            document.getElementById('upload-date').textContent = new Date(data.uploadDate).toLocaleString();
+            document.getElementById('file-size').textContent = formatFileSize(data.size);
+            document.getElementById('download-count').textContent = data.downloadCount;
+
+            // Update access log
+            const accessLog = document.getElementById('access-log');
+            accessLog.innerHTML = '';
+
+            if (data.accessLog.length === 0) {
+                accessLog.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No access records found</td>
+                    </tr>
+                `;
+            } else {
+                data.accessLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .forEach(log => {
+                        accessLog.innerHTML += `
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    ${new Date(log.timestamp).toLocaleString()}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    ${log.ip}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    ${log.action.charAt(0).toUpperCase() + log.action.slice(1)}
+                                </td>
+                            </tr>
+                        `;
+                    });
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showError(message) {
+            document.getElementById('stats-content').classList.add('hidden');
+            const errorMessage = document.getElementById('error-message');
+            document.getElementById('error-text').textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

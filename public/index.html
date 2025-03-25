@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileShare - Easy File Sharing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-['Inter']">
+    <!-- Username Modal -->
+    <div id="username-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-96">
+            <h2 class="text-xl font-semibold mb-4">Enter Your Username</h2>
+            <input type="text" id="username-input" class="w-full p-2 border rounded mb-4" placeholder="Username">
+            <button onclick="registerUser()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-cloud-upload-alt text-blue-600 text-2xl mr-2"></i>
+                    <span class="text-xl font-bold text-gray-900">FileShare</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="user-status" class="text-sm text-gray-600"></span>
+                    <button onclick="toggleFriendsList()" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-users"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex">
+        <!-- Main Content -->
+        <main class="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Share Files Easily</h1>
+                    <p class="text-gray-600">Upload and share files with anyone using a private link</p>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="upload-section mb-8">
+                    <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600 mb-2">Drag and drop your file here</p>
+                        <p class="text-sm text-gray-500">or</p>
+                        <button id="browse-btn" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            Browse Files
+                        </button>
+                        <input type="file" id="file-input" class="hidden">
+                    </div>
+                </div>
+
+                <!-- Upload Progress -->
+                <div id="upload-progress" class="hidden">
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Uploading...</span>
+                            <span id="progress-percentage" class="text-sm font-medium text-blue-600">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Message -->
+                <div id="success-message" class="hidden">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                        <div class="flex">
+                            <i class="fas fa-check-circle text-green-500 text-xl mr-3"></i>
+                            <div>
+                                <h3 class="text-green-800 font-medium">Upload Successful!</h3>
+                                <p class="text-green-700 text-sm mt-1">Your file has been uploaded successfully.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4 space-y-4">
+                        <div>
+                            <p class="text-sm text-gray-700 mb-2">Share this link with others to download the file:</p>
+                            <div class="flex">
+                                <input type="text" id="share-link" readonly class="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <button onclick="copyLink()" class="px-4 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-200 focus:outline-none">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="pt-2 border-t border-gray-200">
+                            <a id="stats-link" href="#" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-chart-bar mr-2"></i>
+                                View File Statistics
+                            </a>
+                            <p class="text-sm text-gray-500 mt-1">Track downloads and access information</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex">
+                        <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3"></i>
+                        <div>
+                            <h3 class="text-red-800 font-medium">Upload Failed</h3>
+                            <p class="text-red-700 text-sm mt-1" id="error-text"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Friends Sidebar -->
+        <div id="friends-sidebar" class="hidden w-80 bg-white border-l border-gray-200 h-[calc(100vh-4rem)] overflow-y-auto">
+            <div class="p-4">
+                <h2 class="text-lg font-semibold mb-4">Friends</h2>
+                
+                <!-- Friend Requests -->
+                <div id="friend-requests" class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Friend Requests</h3>
+                    <div id="friend-requests-list" class="space-y-2">
+                        <!-- Friend requests will be added here -->
+                    </div>
+                </div>
+
+                <!-- Online Friends -->
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Online</h3>
+                    <div id="online-friends" class="space-y-2">
+                        <!-- Online friends will be added here -->
+                    </div>
+                </div>
+
+                <!-- Chat Section -->
+                <div id="chat-section" class="hidden">
+                    <div class="border-t pt-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 id="chat-with" class="text-sm font-medium"></h3>
+                            <button onclick="closeChat()" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="chat-messages" class="h-64 overflow-y-auto mb-4 space-y-2 p-2 bg-gray-50 rounded">
+                            <!-- Messages will be added here -->
+                        </div>
+                        <div class="flex">
+                            <input type="text" id="message-input" class="flex-1 p-2 border rounded-l" placeholder="Type a message...">
+                            <button onclick="sendMessage()" class="px-4 py-2 bg-blue-600 text-white rounded-r hover:bg-blue-700">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let currentUserId;
+        let currentUsername;
+        let currentChatUser;
+
+        // Initialize Socket.IO
+        socket = io();
+
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const browseBtn = document.getElementById('browse-btn');
+        const uploadProgress = document.getElementById('upload-progress');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+        const shareLink = document.getElementById('share-link');
+        const usernameModal = document.getElementById('username-modal');
+        const friendsSidebar = document.getElementById('friends-sidebar');
+        const userStatus = document.getElementById('user-status');
+
+        // Socket event handlers
+        socket.on('registered', ({ userId, username }) => {
+            currentUserId = userId;
+            currentUsername = username;
+            usernameModal.classList.add('hidden');
+            userStatus.textContent = `Logged in as ${username}`;
+        });
+
+        socket.on('userList', (users) => {
+            updateOnlineUsers(users);
+        });
+
+        socket.on('friendRequest', ({ fromUserId, fromUsername }) => {
+            addFriendRequest(fromUserId, fromUsername);
+        });
+
+        socket.on('friendRequestAccepted', ({ userId, username }) => {
+            addFriend(userId, username);
+        });
+
+        socket.on('newMessage', ({ fromUserId, fromUsername, message }) => {
+            addMessage(fromUserId, fromUsername, message, false);
+        });
+
+        socket.on('userOffline', (userId) => {
+            const userElement = document.querySelector(`[data-user-id="${userId}"]`);
+            if (userElement) {
+                userElement.remove();
+            }
+        });
+
+        socket.on('fileAccessed', ({ fileName, accessIP }) => {
+            showNotification(`Someone from ${accessIP} accessed your file: ${fileName}`);
+        });
+
+        // User registration
+        function registerUser() {
+            const username = document.getElementById('username-input').value.trim();
+            if (username) {
+                socket.emit('register', username);
+            }
+        }
+
+        // Friends list functions
+        function toggleFriendsList() {
+            friendsSidebar.classList.toggle('hidden');
+        }
+
+        function updateOnlineUsers(users) {
+            const onlineFriends = document.getElementById('online-friends');
+            onlineFriends.innerHTML = '';
+            
+            users.forEach(user => {
+                if (user.id !== currentUserId) {
+                    const userElement = document.createElement('div');
+                    userElement.className = 'flex items-center justify-between p-2 hover:bg-gray-50 rounded';
+                    userElement.dataset.userId = user.id;
+                    userElement.innerHTML = `
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            <span>${user.username}</span>
+                        </div>
+                        <div class="space-x-2">
+                            <button onclick="sendFriendRequest('${user.id}')" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-user-plus"></i>
+                            </button>
+                            <button onclick="startChat('${user.id}', '${user.username}')" class="text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-comment"></i>
+                            </button>
+                        </div>
+                    `;
+                    onlineFriends.appendChild(userElement);
+                }
+            });
+        }
+
+        function addFriendRequest(userId, username) {
+            const requestsList = document.getElementById('friend-requests-list');
+            const requestElement = document.createElement('div');
+            requestElement.className = 'flex items-center justify-between p-2 bg-blue-50 rounded';
+            requestElement.innerHTML = `
+                <span>${username}</span>
+                <button onclick="acceptFriendRequest('${userId}')" class="text-blue-600 hover:text-blue-800">
+                    <i class="fas fa-check"></i>
+                </button>
+            `;
+            requestsList.appendChild(requestElement);
+        }
+
+        function sendFriendRequest(toUserId) {
+            socket.emit('sendFriendRequest', { toUserId });
+        }
+
+        function acceptFriendRequest(fromUserId) {
+            socket.emit('acceptFriendRequest', { fromUserId });
+        }
+
+        // Chat functions
+        function startChat(userId, username) {
+            currentChatUser = { id: userId, username };
+            document.getElementById('chat-section').classList.remove('hidden');
+            document.getElementById('chat-with').textContent = `Chat with ${username}`;
+            document.getElementById('chat-messages').innerHTML = '';
+        }
+
+        function closeChat() {
+            currentChatUser = null;
+            document.getElementById('chat-section').classList.add('hidden');
+        }
+
+        function sendMessage() {
+            if (!currentChatUser) return;
+            
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            
+            if (message) {
+                socket.emit('sendMessage', {
+                    toUserId: currentChatUser.id,
+                    message
+                });
+                addMessage(currentUserId, currentUsername, message, true);
+                messageInput.value = '';
+            }
+        }
+
+        function addMessage(userId, username, message, isOwn) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageElement = document.createElement('div');
+            messageElement.className = `p-2 rounded ${isOwn ? 'bg-blue-100 ml-auto' : 'bg-gray-100'} max-w-[80%]`;
+            messageElement.innerHTML = `
+                <div class="text-xs text-gray-500">${username}</div>
+                <div>${message}</div>
+            `;
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // File handling functions
+        function handleFiles(files) {
+            if (files.length === 0) return;
+
+            const file = files[0];
+            uploadFile(file);
+        }
+
+        function uploadFile(file) {
+            // Reset UI
+            successMessage.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            uploadProgress.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('userId', currentUserId);
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressPercentage.textContent = percentComplete + '%';
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    uploadProgress.classList.add('hidden');
+                    successMessage.classList.remove('hidden');
+                    
+                    const shareLink = document.getElementById('share-link');
+                    const statsLink = document.getElementById('stats-link');
+                    const downloadUrl = window.location.origin + response.downloadLink;
+                    shareLink.value = downloadUrl;
+                    statsLink.href = `/stats.html?token=${response.token}`;
+                } else {
+                    showError('Upload failed. Please try again.');
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                showError('A network error occurred. Please try again.');
+            });
+
+            xhr.open('POST', '/upload');
+            xhr.send(formData);
+        }
+
+        // Event listeners
+        browseBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        document.getElementById('message-input')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function showError(message) {
+            uploadProgress.classList.add('hidden');
+            errorMessage.classList.remove('hidden');
+            document.getElementById('error-text').textContent = message;
+        }
+
+        function copyLink() {
+            shareLink.select();
+            document.execCommand('copy');
+            const button = shareLink.nextElementSibling;
+            const icon = button.querySelector('i');
+            icon.classList.remove('far', 'fa-copy');
+            icon.classList.add('fas', 'fa-check');
+            setTimeout(() => {
+                icon.classList.remove('fas', 'fa-check');
+                icon.classList.add('far', 'fa-copy');
+            }, 2000);
+        }
+
+        function showNotification(message) {
+            // You can implement a more sophisticated notification system here
+            alert(message);
+        }
+    </script>
+</body>
+</html>
